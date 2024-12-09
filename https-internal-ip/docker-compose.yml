@@ -1,0 +1,28 @@
+services:
+  nginx:
+    image: nginx:latest
+    restart: always
+    network_mode: host
+    volumes:
+      - ./nginx-logs:/var/log/nginx
+      - ./nginx-domain.conf:/etc/nginx/conf.d/default.conf
+      - letsencrypt:/etc/letsencrypt
+      - nginx:/usr/share/nginx/html  
+    depends_on:
+      certbot:
+        condition: service_completed_successfully
+
+  certbot:
+    image: certbot/dns-google
+    network_mode: host
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - nginx:/usr/share/nginx/html
+      - ./key.json:/key.json # service account key with dns-admin role in dns zone project of gcp
+    entrypoint: 
+      - "sh"
+      - "-c"
+      - "certbot certonly --dns-google -d domain.com -m stark@gmail.com --agree-tos -n --dns-google-project dns-zone-project-id --dns-google-credentials /key.json"
+volumes:
+  letsencrypt:
+  nginx:
